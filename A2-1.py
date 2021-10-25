@@ -130,7 +130,7 @@ def satisfyConstraints(assignment, val, day, slot):
 	# if(N - len(r_dict) > total_rest - c):
 	# 	return False
 
-	if(isLastAssignment(assignment, day)):
+	if(isLastAssignment(assignment, day) and s == 'R'):
 		r_dict = {}
 		start = day - day%7
 		end = start + 7
