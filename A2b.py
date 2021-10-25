@@ -190,17 +190,42 @@ def inference(assignment, domain, val, day, slot):
 	return new_domain
 
 def order(assignment, domain, day, slot):
-	new_domain = []
+
 	s = getSlot(slot)
-	if(s == 'A' or s == 'E' or s == 'M'):
-		return domain[day][slot]
+	if(s == 'E' or s == 'M'):
+		new_domain1 = copy.deepcopy(domain[day][slot])
+		temp = []
+		for per in range(S):
+			if(per in new_domain1):
+				new_domain1.remove(per)
+				temp.append(per)
+		new_domain1 = temp + new_domain1
+		return new_domain1
+
+	if(s == 'A'):
+		new_domain1 = copy.deepcopy(domain[day][slot])
+		temp = []
+		for per in range(S):
+			if(per in new_domain1):
+				new_domain1.remove(per)
+				temp.append(per)
+		new_domain1 = new_domain1 + temp
+		return new_domain1
 
 	r_dict = {}
 	new_domain = []
 	start = day - day%7
 	end = start + 7
 	if(end > D):
-		return domain[day][slot]
+		new_domain1 = copy.deepcopy(domain[day][slot])
+		temp = []
+		for per in range(S):
+			if(per in new_domain1):
+				new_domain1.remove(per)
+				temp.append(per)
+		new_domain1 = new_domain1 + temp
+		return new_domain1
+
 	for d in range(start, end):
 		r_slot = assignment[d][m + a + e:]
 		for p in r_slot:
@@ -216,7 +241,14 @@ def order(assignment, domain, day, slot):
 		if(v in r_dict and v in domain[day][slot]):
 			new_domain.append(v)
 
-	return new_domain
+	new_domain1 = copy.deepcopy(new_domain)
+	temp = []
+	for per in range(S):
+		if(per in new_domain1 and per in r_dict):
+			new_domain1.remove(per)
+			temp.append(per)
+	new_domain1 = new_domain1 + temp
+	return new_domain1
 
 def rosterSystem(assignment, domain):
 	global calls
@@ -247,16 +279,19 @@ def weight(d):
 	weight = 1
 	for i in d:
 		for j in d[i]:
+			# print(i, d[i])
 			if(i < S and (j == 'M' or j == 'E')):
 				weight *= 2
 	return weight
-	
+
 N = 0
 D = 0
 m = 0
 a = 0
 e = 0
 S = 0
+T = 0
+
 df = pd.read_csv('input1.csv')
 for index,row in df.iterrows():
 	N = row['N']
@@ -265,6 +300,7 @@ for index,row in df.iterrows():
 	a = row['a']
 	e = row['e']
 	S = row['S']
+	T = row['T']
 
 # N = 40
 # D = 36
@@ -281,7 +317,7 @@ domain = [[x for i in range(N)] for j in range(D)]
 calls = 0
 
 soln_list = [{}]
-with open("solution.json" , 'w') as file:
+with open("solution1.json" , 'w') as file:
    for d in soln_list:
        json.dump(d,file)
        file.write("\n")
@@ -307,7 +343,7 @@ if(result != False):
 			temp[key] = n_dict[i][j]
 		soln_list.append(temp)
 
-	with open("solution.json" , 'w') as file:
+	with open("solution1.json" , 'w') as file:
 	   for d in soln_list:
 	       json.dump(d,file)
 	       file.write("\n")
