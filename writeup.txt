@@ -1,0 +1,16 @@
+﻿WRITE UP
+Name: B.V.N.S.Aditya, 2019CS50471
+Name: V.Harshith Reddy, 2019CS50450
+PART - A:
+We modeled the given problem as csp, in which pairs (slot, day) are variables and Nurses (0 to N - 1) are domain values. We implemented backtracking search with forward checking.
+Selecting Unassigned Variables: The unassigned variables with least number of domain values are selected. We used 'Rest slot' to break ties among unassigned variables. This will help function to fail fast and move towards solution early.
+Ordering Domain Values: If we are assigning nurses to 'Rest slot', we give preference to those nurses who are not allotted any rest slot in the week. This will help to satisfy rest constraints quickly.
+Forward Checking: 
+1. If we assign a nurse to a variable (slot, day), we remove the nurse from the domain values of all the slots in that day (because each nurse can work only in one slot in a day).
+2. If we assign a nurse to a variable (slot, day) and if the slot is ‘M’ or ‘E’, we remove the nurse from the morning slots and evening slots of the next day, because a nurse cannot work on ‘M’ and ‘M’ slots on two consecutive days and ‘E’ and ‘M’ slots on two consecutive days.
+At each step, we check whether variable assignment is satisfying constraints, if yes we move forward and if not we backtrack.
+The backtracking function returns consistent solution (if exists) in which all (slot, day) pairs are assigned a nurse.
+
+
+PART - B:
+Here, we changed the order of domain values. If slots are Morning ('M') and Evening ('E'), we give preference to Senior nurses and if slots are Afternoon ('A') and Rest ('R') we give preference to other nurses. This way we can increase the weight of the solution.
