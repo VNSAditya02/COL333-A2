@@ -35,15 +35,6 @@ def selectUnassignedVariable1(assignment, domain):
 			if(assignment[day][slot] == None):
 				return (day, slot)
 
-	# for day in range(len(assignment)):
-	# 	for slot in range(m, m + a):
-	# 		if(assignment[day][slot] == None):
-	# 			return (day, slot)
-	# for day in range(len(assignment)):
-	# 	for slot in range(m + a, m + a + e):
-	# 		if(assignment[day][slot] == None):
-	# 			return (day, slot)
-
 	for i in range(len(assignment)):
 		for j in range(len(assignment[i])):
 			if(assignment[i][j] == None):
@@ -64,21 +55,6 @@ def selectUnassignedVariable(assignment, domain):
 				min_val = len(domain[i][j])
 				min_i = i
 				min_j = j
-			# elif(assignment[i][j] == None and len(domain[i][j]) < min_val):
-			# 	cur_slot = getSlot(j)
-			# 	min_val = len(domain[i][j])
-			# 	min_i = i
-			# 	min_j = j
-			# elif(assignment[i][j] == None and len(domain[i][j]) == min_val and getSlot(j) == 'M' and cur_slot != 'M' and cur_slot != 'R'):
-			# 	cur_slot = getSlot(j)
-			# 	min_val = len(domain[i][j])
-			# 	min_i = i
-			# 	min_j = j
-			# elif(assignment[i][j] == None and len(domain[i][j]) == min_val and getSlot(j) == 'E' and cur_slot != 'M' and cur_slot != 'E' and cur_slot != 'R'):
-			# 	cur_slot = getSlot(j)
-			# 	min_val = len(domain[i][j])
-			# 	min_i = i
-			# 	min_j = j
 	return (min_i, min_j)
 
 def isLastAssignment(assignment, day):
@@ -109,26 +85,6 @@ def satisfyConstraints(assignment, val, day, slot):
 		return False
 	if(val in assignment[day]):
 		return False
-
-	# r_dict = {}
-	# c = 0
-	# for d in range(D):
-	# 	r_slot = assignment[d][m + a + e:]
-	# 	for p in r_slot:
-	# 		if(p != None):
-	# 			c += 1
-	# 		if p in r_dict:
-	# 			r_dict[p] += 1
-	# 		else:
-	# 			r_dict[p] = 1
-	# if(s == 'R'):
-	# 	c += 1
-	# 	if val in r_dict:
-	# 		r_dict[val] += 1
-	# 	else:
-	# 		r_dict[val] = 1
-	# if(N - len(r_dict) > total_rest - c):
-	# 	return False
 
 	if(isLastAssignment(assignment, day) and s == 'R'):
 		r_dict = {}
@@ -189,7 +145,7 @@ def inference(assignment, domain, val, day, slot):
 					return False
 	return new_domain
 
-def order(assignment, domain, day, slot):
+def order_a(assignment, domain, day, slot):
 	new_domain = []
 	s = getSlot(slot)
 	if(s == 'A' or s == 'E' or s == 'M'):
@@ -215,41 +171,135 @@ def order(assignment, domain, day, slot):
 	for v in range(N):
 		if(v in r_dict and v in domain[day][slot]):
 			new_domain.append(v)
+	# if(s != 'R'):
+	# 	new_domain = new_domain[::-1]
 
 	return new_domain
 
-def rosterSystem(assignment, domain):
-	global calls
-	calls += 1
-	if(time.time() - start_time > 300):
-		print("TLE")
-		exit(-1)
-	# print("Calls: " + str(calls))
+def order_b(assignment, domain, day, slot):
+	s = getSlot(slot)
+	if(s == 'E' or s == 'M'):
+		new_domain1 = copy.deepcopy(domain[day][slot])
+		temp = []
+		for per in range(S):
+			if(per in new_domain1):
+				new_domain1.remove(per)
+				temp.append(per)
+		new_domain1 = temp + new_domain1
+		return new_domain1
+
+	if(s == 'A'):
+		new_domain1 = copy.deepcopy(domain[day][slot])
+		temp = []
+		for per in range(S):
+			if(per in new_domain1):
+				new_domain1.remove(per)
+				temp.append(per)
+		new_domain1 = new_domain1 + temp
+		return new_domain1
+
+	r_dict = {}
+	new_domain = []
+	start = day - day%7
+	end = start + 7
+	if(end > D):
+		new_domain1 = copy.deepcopy(domain[day][slot])
+		temp = []
+		for per in range(S):
+			if(per in new_domain1):
+				new_domain1.remove(per)
+				temp.append(per)
+		new_domain1 = new_domain1 + temp
+		return new_domain1
+
+	for d in range(start, end):
+		r_slot = assignment[d][m + a + e:]
+		for p in r_slot:
+			if p in r_dict:
+				r_dict[p] += 1
+			else:
+				r_dict[p] = 1
+	for v in range(N):
+		if(v not in r_dict and v in domain[day][slot]):
+			new_domain.append(v)
+	r_dict = {k: v for k, v in sorted(r_dict.items(), key=lambda item: item[1])}
+	for v in range(N):
+		if(v in r_dict and v in domain[day][slot]):
+			new_domain.append(v)
+
+	new_domain1 = copy.deepcopy(new_domain)
+	temp = []
+	for per in range(S):
+		if(per in new_domain1 and per in r_dict):
+			new_domain1.remove(per)
+			temp.append(per)
+	new_domain1 = new_domain1 + temp
+	return new_domain1
+
+def rosterSystem(assignment, domain, part):
+	# global calls
+	# calls += 1
 	if(complete(assignment)):
 		return assignment
 	(day, slot) = selectUnassignedVariable(assignment, domain)
-	for val in order(assignment, domain, day, slot):
+	domain_order = []
+	if(part == 0):
+		domain_order = order_a(assignment, domain, day, slot)
+	else:
+		domain_order = order_b(assignment, domain, day, slot)
+	for val in domain_order:
 		if(satisfyConstraints(assignment, val, day, slot)):
 			assignment[day][slot] = val
 			inferences = inference(assignment, domain, val, day, slot)
-			
 			if(inferences != False):
 				# print(assignment)
 				# print(inferences)
 				# print("----------")
-				result = rosterSystem(assignment, inferences)
+				result = rosterSystem(assignment, inferences, part)
 				if(result != False):
 					return result
 			assignment[day][slot] = None
 	return False
 
+def valid(d):
+	for i in d:
+		rest = 0
+		for j in range(len(d[i])):
+			if(d[i][j] == 'R'):
+				rest += 1
+			if(j > 0 and d[i][j] == 'M' and d[i][j - 1] == 'M'):
+				return False
+			if(j > 0 and d[i][j] == 'M' and d[i][j - 1] == 'E'):
+				return False
+			if((j + 1)%7 == 0):
+				if(rest == 0):
+					return False
+				rest = 0
+	for j in range(D):
+		M = 0
+		A = 0
+		E = 0
+		R = 0
+		for i in d:
+			if(d[i][j] == 'M'):
+				M += 1
+			elif(d[i][j] == 'A'):
+				A += 1
+			elif(d[i][j] == 'E'):
+				E += 1
+			else:
+				R += 1
+		if(M != m or A != a or E != e or R != r):
+			return False
+	return True
+
 def weight(d):
-	weight = 1
+	count = 0
 	for i in d:
 		for j in d[i]:
 			if(i < S and (j == 'M' or j == 'E')):
-				weight *= 2
-	return weight
+				count += 1
+	return count
 	
 N = 0
 D = 0
@@ -257,20 +307,29 @@ m = 0
 a = 0
 e = 0
 S = 0
-df = pd.read_csv('input1.csv')
-for index,row in df.iterrows():
-	N = row['N']
-	D = row['D']
-	m = row['m']
-	a = row['a']
-	e = row['e']
-	S = row['S']
 
-# N = 40
-# D = 36
-# m = 20
-# a = 10
-# e = 5
+# 0 for Part-a, 1 for Part-b
+part = -1
+file = sys.argv[1]
+df = pd.read_csv(file)
+
+if(len(df.columns) == 5):
+	for index,row in df.iterrows():
+		N = row['N']
+		D = row['D']
+		m = row['m']
+		a = row['a']
+		e = row['e']
+		part = 0
+else:
+	for index,row in df.iterrows():
+		N = row['N']
+		D = row['D']
+		m = row['m']
+		a = row['a']
+		e = row['e']
+		S = row['S']
+		part = 1
 
 sys.setrecursionlimit(10000)
 total_rest = D*(N - (m + a + e))
@@ -280,14 +339,23 @@ x = [i for i in range(N)]
 domain = [[x for i in range(N)] for j in range(D)]
 calls = 0
 
+# if(part == 0 and N == 7*r):
+# 	n = 0
+# 	for day in range(7):
+# 		for i in range(m + a + e, N):
+# 			assignment[day][i] = n
+# 			domain[day][i] = [n]
+# 			n += 1
 soln_list = [{}]
 with open("solution.json" , 'w') as file:
    for d in soln_list:
        json.dump(d,file)
        file.write("\n")
-if((D > 6 and N == m + a + e) or (N > 7*r) or (m > a + r)):
+if((D > 6 and N == m + a + e) or (D > 6 and N > 7*r) or (m > a + r)):
 	exit(-1)
-result = rosterSystem(assignment, domain)
+
+result = rosterSystem(assignment, domain, part)
+
 n_dict = {}
 if(result != False):
 	soln_list = []
@@ -300,21 +368,24 @@ if(result != False):
 				n_dict[per].append(s)
 			else:
 				n_dict[per] = [s]
+	temp = {}
 	for i in sorted(n_dict):
-		temp = {}
 		for j in range(len(n_dict[i])):
 			key = 'N' + str(i) + '_' + str(j)
 			temp[key] = n_dict[i][j]
-		soln_list.append(temp)
+	soln_list.append(temp)
 
 	with open("solution.json" , 'w') as file:
 	   for d in soln_list:
 	       json.dump(d,file)
 	       file.write("\n")
-else:
-	print("F")
+# else:
+# 	print("F")
 
-		
-print("Time: " + str(time.time() - start_time))
-print("Calls: " + str(calls))
-print("Weight:" + str(weight(n_dict)))
+# print(part)
+# print("Time: " + str(time.time() - start_time))
+# print("Calls: " + str(calls))
+# print("Weight:" + str(weight(n_dict)))
+# print("Validity: ", valid(n_dict))
+# if(valid(n_dict) == False):
+# 	print("F\n"*5)
